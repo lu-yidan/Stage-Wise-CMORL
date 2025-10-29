@@ -4,6 +4,7 @@
 *.pyc
 *.png
 *.sh
+*.idea
 .env
 args.txt
 
