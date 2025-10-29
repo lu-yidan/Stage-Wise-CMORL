@@ -1,0 +1,148 @@
+# used to create the object
+name: AdamLiteBackflip
+
+backup_files: [
+    'tasks/adam_lite.yaml',
+    'tasks/adam_lite.py',
+]
+n_total_steps: 1000000000
+
+sim:
+    physics_engine: 'physx'
+    sim_dt: 0.005
+    con_dt: 0.02
+    substeps: 1
+    up_axis: "z"
+    use_gpu_pipeline: True
+    gravity: [0.0, 0.0, -9.81]
+    physx:
+        num_threads: 4
+        solver_type: 1
+        use_gpu: True
+        num_position_iterations: 4
+        num_velocity_iterations: 4
+        contact_offset: 0.01
+        rest_offset: 0.0
+        bounce_threshold_velocity: 0.1
+        max_depenetration_velocity: 1.0
+        default_buffer_size_multiplier: 5.0
+        max_gpu_contact_pairs: 8388608
+        num_subscenes: 4
+        contact_collection: 1
+
+env:
+    num_envs: 1000
+    env_spacing: 2.0
+    history_len: 10
+    enable_camera_sensors: False
+
+    reward_names: [com_pos, body_balance, vel, energy, style]
+    cost_names: [foot_contact, body_contact, joint_pos, joint_vel, joint_torque]
+    stage_names: [stand, sit, jump, air, land]
+
+    urdf_asset:
+        file: "adam_lite/urdf/adam_lite.urdf"
+        fix_base_link: false
+        flip_visual_attachments: false
+
+    default_joint_positions:
+        hipPitch_Left: -0.32
+        hipRoll_Left: 0.0
+        hipYaw_Left: -0.18
+        kneePitch_Left: 0.66
+        anklePitch_Left: -0.39
+        ankleRoll_Left: 0.0
+
+        hipPitch_Right: -0.32
+        hipRoll_Right: 0.0
+        hipYaw_Right: 0.18
+        kneePitch_Right: 0.66
+        anklePitch_Right: -0.39
+        ankleRoll_Right: 0.0
+
+        waistRoll: 0.0
+        waistPitch: 0.0
+        waistYaw: 0.0
+
+        shoulderPitch_Left: 0.0
+        shoulderRoll_Left: 0.1
+        shoulderYaw_Left: 0.0
+        elbow_Left: -0.3
+
+        shoulderPitch_Right: 0.0
+        shoulderRoll_Right: -0.1
+        shoulderYaw_Right: 0.0
+        elbow_Right: -0.3
+
+    sit_joint_positions:
+        hipPitch_Left: -0.85
+        hipRoll_Left: 0.0
+        hipYaw_Left: -0.18
+        kneePitch_Left: 1.7
+        anklePitch_Left: -0.85
+        ankleRoll_Left: 0.0
+
+        hipPitch_Right: -0.85
+        hipRoll_Right: 0.0
+        hipYaw_Right: 0.18
+        kneePitch_Right: 1.7
+        anklePitch_Right: -0.85
+        ankleRoll_Right: 0.0
+
+        waistRoll: 0.0
+        waistPitch: 0.0
+        waistYaw: 0.0
+
+        shoulderPitch_Left: 0.0
+        shoulderRoll_Left: 0.0
+        shoulderYaw_Left: 0.0
+        elbow_Left: 0.0
+
+        shoulderPitch_Right: 0.0
+        shoulderRoll_Right: 0.0
+        shoulderYaw_Right: 0.0
+        elbow_Right: 0.0
+
+    init_base_pose:
+        pos: [0.0, 0.0, 0.9]
+        quat: [0.0, 0.0, 0.0, 1.0]
+        lin_vel: [0.0, 0.0, 0.0]
+        ang_vel: [0.0, 0.0, 0.0]
+
+    control:
+        stiffness:
+            hipPitch: 305.0
+            hipRoll: 700.0
+            hipYaw: 405.0
+            kneePitch: 305.0
+            anklePitch: 20.0
+            ankleRoll: 0.0
+            waistRoll: 405.0
+            waistPitch: 405.0
+            waistYaw: 205.0
+            shoulderPitch: 18.0
+            shoulderRoll: 9.0
+            shoulderYaw: 9.0
+            elbow: 9.0
+        damping:
+            hipPitch: 6.1
+            hipRoll: 30.0
+            hipYaw: 6.1
+            kneePitch: 6.1
+            anklePitch: 2.5
+            ankleRoll: 0.35
+            waistRoll: 6.1
+            waistPitch: 6.1
+            waistYaw: 4.1
+            shoulderPitch: 0.9
+            shoulderRoll: 0.9
+            shoulderYaw: 0.9
+            elbow: 0.9
+        action_scale: 0.5
+        action_smooth_weight: 0.5
+
+    learn:
+        episode_length_s: 10.0
+        gait_frequency: 3
+
+
