@@ -36,7 +36,18 @@ env:
     history_len: 10
     enable_camera_sensors: False
 
-    reward_names: [com_pos, body_balance, vel, energy, style, default_torso, feet_orien_forward, shoulder_symmetry]
+    reward_names: [
+        com_pos, 
+        body_balance, 
+        vel, 
+        energy, 
+        style, 
+        default_torso, 
+        feet_orien_forward, 
+        shoulder_symmetry, 
+        torso_orientation, 
+        feet_distance
+    ]
     # reward_names: [com_pos, body_balance, vel, energy, style]
     cost_names: [foot_contact, body_contact, joint_pos, joint_vel, joint_torque]
     stage_names: [stand, sit, jump, air, land]
@@ -68,12 +79,12 @@ env:
         shoulderPitch_Left: 0.0
         shoulderRoll_Left: 0.1
         shoulderYaw_Left: 0.0
-        elbow_Left: -0.3
+        elbow_Left: -1.5
 
         shoulderPitch_Right: 0.0
         shoulderRoll_Right: -0.1
         shoulderYaw_Right: 0.0
-        elbow_Right: -0.3
+        elbow_Right: -1.5
 
     # sit_joint_positions:
     #     hipPitch_Left: -0.85
@@ -123,13 +134,13 @@ env:
         waistPitch: 0.4
         waistYaw: 0.0
 
-        shoulderPitch_Left: -0.5
-        shoulderRoll_Left: 0.0
+        shoulderPitch_Left: 0.0
+        shoulderRoll_Left: 0.1
         shoulderYaw_Left: 0.0
         elbow_Left: -1.5
 
-        shoulderPitch_Right: -0.5
-        shoulderRoll_Right: 0.0
+        shoulderPitch_Right: 0.0
+        shoulderRoll_Right: -0.1
         shoulderYaw_Right: 0.0
         elbow_Right: -1.5
     init_base_pose:

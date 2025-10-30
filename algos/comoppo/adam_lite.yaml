@@ -23,9 +23,19 @@ clip_ratio: 0.03
 
 # for CMORL
 con_coeff: 10.0
-# reward_names: [com_pos, body_balance, vel, energy, style, default_torso, feet_orien_forward, shoulder_symmetry]
-preference: [1.5, 1.0, 2.5, 0.05, 0.05, 1.5, 0.8, 0.1]
-
+# reward_names: [com_pos, body_balance, vel, energy, style, default_torso, feet_orien_forward, shoulder_symmetry, torso_orientation, feet_distance]
+preference: [
+  1.5,  # 0 com_pos: 保持质心高度与目标
+  1.0,  # 1 body_balance: 身体平衡
+  3.0,  # 2 vel: 后空翻角速度激励
+  0.05, # 3 energy: 能耗
+  0.05, # 4 style: 距默认关节角度偏差
+  0.0,  # 5 default_torso: 腰部稳定性 0.6 ############
+  0.8,  # 6 feet_orien_forward: 脚尖朝前
+  0.2,  # 7 shoulder_symmetry: 双肩对称
+  0.0,  # 8 torso_orientation: 躯干竖直 0.5 ############
+  0.5   # 9 feet_distance: 双脚间距合适
+]
 # reward_names: [com_pos, body_balance, vel, energy, style]
 # preference: [1.0, 1.0, 1.0, 0.1, 0.1]
 

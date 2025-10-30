@@ -314,8 +314,8 @@ class Env(VecTask):
         # compute targets from actions
         self.joint_targets[:] = self.action_smooth_weight*(actions*self.action_scale + self.default_dof_positions) + (1.0 - self.action_smooth_weight)*self.joint_targets
         # soft-lock waist joints: force targets to default and ignore action
-        # if hasattr(self, 'waist_dof_mask') and self.waist_dof_mask.any():
-        #     self.joint_targets[:, self.waist_dof_mask] = self.default_dof_positions[:, self.waist_dof_mask]
+        if hasattr(self, 'waist_dof_mask') and self.waist_dof_mask.any():
+            self.joint_targets[:, self.waist_dof_mask] = self.default_dof_positions[:, self.waist_dof_mask]
         self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(self.joint_targets))
 
     def post_physics_step(self):
@@ -410,6 +410,28 @@ class Env(VecTask):
                 # 容错：没找到关节名则不给奖励
                 shoulder_sym = torch.zeros(self.num_envs, device=self.device)
             self.rew_buf[:, 7] = shoulder_sym
+
+        # ------- torso_orientation: 躯干竖直奖励（第9个reward slot, index 8） -------
+        # 只在stand/sit阶段生效，鼓励torso保持竖直
+        if self.rew_buf.shape[1] >= 9:
+            # projected gravity在torso本体系的xy分量越小越竖直
+            # world_z变换到base frame就是body竖直方向分量
+            torso_xy = torch_utils.quat_rotate_inverse(self.base_quaternions, self.world_z)[:, :2]
+            orientation_reward = torch.exp(-torch.norm(torso_xy, dim=1) * 20)
+            active_mask = (self.stage_buf[:, 0] + self.stage_buf[:, 1]) > 0
+            self.rew_buf[:, 8] = orientation_reward * active_mask
+
+        # ------- feet_distance: 双足间距约束奖励（第10个reward slot, index 9） -------
+        # 始终生效, 脚距离为[0.2,0.4] m时奖励最大
+        if self.rew_buf.shape[1] >= 10 and self.foot_indices.numel() >= 2:
+            foot_pos = self.rigid_body_states[:, self.foot_indices, :2] # (N,2,2)
+            foot_dist = torch.norm(foot_pos[:, 0, :] - foot_pos[:, 1, :], dim=1)
+            fd = 0.2  # 最小目标距离
+            max_df = 0.4  # 最大目标距离
+            d_min = torch.clamp(foot_dist - fd, -0.5, 0.0)
+            d_max = torch.clamp(foot_dist - max_df, 0.0, 0.5)
+            fd_reward = (torch.exp(-torch.abs(d_min) * 100) + torch.exp(-torch.abs(d_max) * 100)) / 2
+            self.rew_buf[:, 9] = fd_reward
 
         # costs
         foot_contact_threshold = 0.25
