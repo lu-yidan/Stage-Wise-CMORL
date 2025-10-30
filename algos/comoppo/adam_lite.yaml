@@ -23,7 +23,13 @@ clip_ratio: 0.03
 
 # for CMORL
 con_coeff: 10.0
-preference: [1.0, 1.0, 1.0, 0.1, 0.1]
+# reward_names: [com_pos, body_balance, vel, energy, style, default_torso, feet_orien_forward, shoulder_symmetry]
+preference: [1.5, 1.0, 2.5, 0.05, 0.05, 1.5, 0.8, 0.1]
+
+# reward_names: [com_pos, body_balance, vel, energy, style]
+# preference: [1.0, 1.0, 1.0, 0.1, 0.1]
+
+# cost_names: [foot_contact, body_contact, joint_pos, joint_vel, joint_torque]
 con_thresholds: [0.25, 0.025, 0.025, 0.025, 0.025]
 # symmetric constraints
 is_sym_con: true

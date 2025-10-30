@@ -183,6 +183,8 @@ class Env(VecTask):
 
         self.link_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
+        # persistent waist dof mask for control/reward
+        self.waist_dof_mask = torch.tensor([('waist' in name) for name in self.dof_names], device=self.device, dtype=torch.bool)
         dof_props = self.gym.get_asset_dof_properties(robot_asset)
         for i, joint_name in enumerate(self.dof_names):
             for dof_name in self.cfg["env"]["control"]["stiffness"]:
@@ -309,7 +311,11 @@ class Env(VecTask):
 
     def pre_physics_step(self, actions: torch.Tensor):
         self.prev_actions[:] = actions
+        # compute targets from actions
         self.joint_targets[:] = self.action_smooth_weight*(actions*self.action_scale + self.default_dof_positions) + (1.0 - self.action_smooth_weight)*self.joint_targets
+        # soft-lock waist joints: force targets to default and ignore action
+        # if hasattr(self, 'waist_dof_mask') and self.waist_dof_mask.any():
+        #     self.joint_targets[:, self.waist_dof_mask] = self.default_dof_positions[:, self.waist_dof_mask]
         self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(self.joint_targets))
 
     def post_physics_step(self):
@@ -353,6 +359,57 @@ class Env(VecTask):
         self.rew_buf[:, 4] += self.stage_buf[:, 2]*(-torch.square(self.dof_positions[:, 10:] - self.default_dof_positions[:, 10:]).mean(dim=-1))
         self.rew_buf[:, 4] += self.stage_buf[:, 3]*(-torch.square(self.dof_positions[:, 10:] - self.default_dof_positions[:, 10:]).mean(dim=-1))
         self.rew_buf[:, 4] += self.stage_buf[:, 4]*(-torch.square(self.dof_positions - self.default_dof_positions).mean(dim=-1))
+
+        # ------- default_torso: 腰部稳定性奖励（第6个reward slot, index 5） -------
+        # default_torso: encourage waist joints to stay near default to reduce wobble
+        # use DoFs whose names contain 'waist'
+        waist_dof_mask = torch.tensor([('waist' in name) for name in self.dof_names], device=self.device, dtype=torch.bool)
+        if waist_dof_mask.any():
+            joint_diff_waist = self.dof_positions[:, waist_dof_mask] - self.default_dof_positions[:, waist_dof_mask]
+            torso_diff = -torch.norm(joint_diff_waist, dim=1)
+            rew_torso = torch.exp(20.0 * torso_diff)
+        else:
+            rew_torso = torch.zeros(self.num_envs, device=self.device)
+        # write into 6th reward slot (index 5)
+        if self.rew_buf.shape[1] >= 6:
+            self.rew_buf[:, 5] = rew_torso
+
+        # ------- feet_orien_forward: 脚尖朝向奖励（第7个reward slot, index 6） -------
+        # feet_orien_forward: align each toe's forward axis with base forward
+        # base forward in base frame is [1,0,0]. We compare feet forward (in base frame) to this target.
+        if self.rew_buf.shape[1] >= 7 and self.foot_indices.numel() >= 2:
+            feet_quats = self.rigid_body_states[:, self.foot_indices, 3:7]  # (N,2,4)
+            forward_vec = torch.zeros((self.num_envs, 3), device=self.device)
+            forward_vec[:, 0] = 1.0
+            # left and right foot forward vectors in world frame
+            left_forward_world = torch_utils.quat_rotate(feet_quats[:, 0, :], forward_vec)
+            right_forward_world = torch_utils.quat_rotate(feet_quats[:, 1, :], forward_vec)
+            # rotate into base (body) frame
+            left_forward_local = torch_utils.quat_rotate_inverse(self.base_quaternions, left_forward_world)
+            right_forward_local = torch_utils.quat_rotate_inverse(self.base_quaternions, right_forward_world)
+            target_forward = forward_vec  # [1,0,0] in base frame
+            left_err = torch.sum(torch.square(target_forward - left_forward_local), dim=-1)
+            right_err = torch.sum(torch.square(target_forward - right_forward_local), dim=-1)
+            feet_orien_score = torch.exp(-10.0 * (left_err + right_err) * 0.5)
+            self.rew_buf[:, 6] = feet_orien_score
+
+        # ------- shoulder_symmetry: 双肩对称性奖励（第8个reward slot, index 7） -------
+        # 鼓励shoulderRoll/shoulderYaw 左右对称（大小相等方向相反），更美观
+        if self.rew_buf.shape[1] >= 8:
+            dn = self.dof_names
+            try:
+                idx_L_roll = dn.index('shoulderRoll_Left')
+                idx_R_roll = dn.index('shoulderRoll_Right')
+                idx_L_yaw  = dn.index('shoulderYaw_Left')
+                idx_R_yaw  = dn.index('shoulderYaw_Right')
+                roll_sym = torch.abs(self.dof_positions[:,idx_L_roll] + self.dof_positions[:,idx_R_roll])
+                yaw_sym  = torch.abs(self.dof_positions[:,idx_L_yaw]  + self.dof_positions[:,idx_R_yaw])
+                # 二者均小于0时最美观
+                shoulder_sym = -(roll_sym + yaw_sym)
+            except ValueError:
+                # 容错：没找到关节名则不给奖励
+                shoulder_sym = torch.zeros(self.num_envs, device=self.device)
+            self.rew_buf[:, 7] = shoulder_sym
 
         # costs
         foot_contact_threshold = 0.25

@@ -36,7 +36,8 @@ env:
     history_len: 10
     enable_camera_sensors: False
 
-    reward_names: [com_pos, body_balance, vel, energy, style]
+    reward_names: [com_pos, body_balance, vel, energy, style, default_torso, feet_orien_forward, shoulder_symmetry]
+    # reward_names: [com_pos, body_balance, vel, energy, style]
     cost_names: [foot_contact, body_contact, joint_pos, joint_vel, joint_torque]
     stage_names: [stand, sit, jump, air, land]
 
@@ -74,35 +75,63 @@ env:
         shoulderYaw_Right: 0.0
         elbow_Right: -0.3
 
+    # sit_joint_positions:
+    #     hipPitch_Left: -0.85
+    #     hipRoll_Left: 0.0
+    #     hipYaw_Left: -0.18
+    #     kneePitch_Left: 1.7
+    #     anklePitch_Left: -0.85
+    #     ankleRoll_Left: 0.0
+
+    #     hipPitch_Right: -0.85
+    #     hipRoll_Right: 0.0
+    #     hipYaw_Right: 0.18
+    #     kneePitch_Right: 1.7
+    #     anklePitch_Right: -0.85
+    #     ankleRoll_Right: 0.0
+
+    #     waistRoll: 0.0
+    #     waistPitch: 0.0
+    #     waistYaw: 0.0
+
+    #     shoulderPitch_Left: 0.0
+    #     shoulderRoll_Left: 0.0
+    #     shoulderYaw_Left: 0.0
+    #     elbow_Left: 0.0
+
+    #     shoulderPitch_Right: 0.0
+    #     shoulderRoll_Right: 0.0
+    #     shoulderYaw_Right: 0.0
+    #     elbow_Right: 0.0
+
     sit_joint_positions:
-        hipPitch_Left: -0.85
+        hipPitch_Left: -1.05
         hipRoll_Left: 0.0
-        hipYaw_Left: -0.18
+        hipYaw_Left: -0.35
         kneePitch_Left: 1.7
         anklePitch_Left: -0.85
         ankleRoll_Left: 0.0
 
-        hipPitch_Right: -0.85
+        hipPitch_Right: -1.05
         hipRoll_Right: 0.0
-        hipYaw_Right: 0.18
+        hipYaw_Right: 0.35
         kneePitch_Right: 1.7
         anklePitch_Right: -0.85
         ankleRoll_Right: 0.0
 
         waistRoll: 0.0
-        waistPitch: 0.0
+        waistPitch: 0.4
         waistYaw: 0.0
 
-        shoulderPitch_Left: 0.0
+        shoulderPitch_Left: -0.5
         shoulderRoll_Left: 0.0
         shoulderYaw_Left: 0.0
-        elbow_Left: 0.0
+        elbow_Left: -1.5
 
-        shoulderPitch_Right: 0.0
+        shoulderPitch_Right: -0.5
         shoulderRoll_Right: 0.0
         shoulderYaw_Right: 0.0
-        elbow_Right: 0.0
-
+        elbow_Right: -1.5
     init_base_pose:
         pos: [0.0, 0.0, 0.9]
         quat: [0.0, 0.0, 0.0, 1.0]
